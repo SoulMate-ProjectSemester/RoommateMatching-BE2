@@ -1,0 +1,16 @@
+const mysql      = require('mysql');
+const connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'root',
+  password : 'ss4015',
+  database : 'soulmate'
+});
+
+connection.connect();
+
+connection.query('show tables;', (error, rows, fields) => {
+  if (error) throw error;
+  console.log('result: ', rows);
+});
+
+connection.end();
