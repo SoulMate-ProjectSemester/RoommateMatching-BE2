@@ -1,13 +1,14 @@
+require('dotenv').config();
 const express = require('express');
-
+const chatController = require('./chatController');
 const app = express();
+const port = process.env.PORT || 8181;
 
-app.set('port', process.env.PORT || 8181);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-    res.send('Hello, Express')
-});
+app.post('/chat', chatController.handleChat);
 
-app.listen(app.get('port'), ()=>{
-    console.log(app.get('port'), '번 포트에서 대기 중')
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
 });
