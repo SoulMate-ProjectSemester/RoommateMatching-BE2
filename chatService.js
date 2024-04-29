@@ -3,64 +3,90 @@ const databaseService = require('./DBConnect');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-async function getChatResponse(userId, message) {
-    let assistantId = await databaseService.getAssistantId(userId);
+// create assistant
+async function createAssistant(userId) {
+  let assistantId = await databaseService.getAssistantId();
 
-    if (!assistantId) {
-        // 새 Assistant 생성
-        const assistant = await openai.beta.assistants.create({
-            instructions:
-            "너는 룸메이트 매칭 서비스의 ai챗봇이야. 사용자의 질문에 친절히 답해줘",
-            name: "Math Tutor",
-            model: "gpt-4-turbo",
-        });
-        assistantId = assistant.id;
-        await databaseService.saveAssistantId(userId, assistantId);
+  if (!assistantId) {
+      const assistant = await openai.beta.assistants.create({
+          instructions: "너는 룸메이트 매칭 서비스의 ai챗봇이야. 사용자의 질문에 친절히 답해줘",
+          name: "Roommate service chatbot",
+          model: "gpt-4-turbo",
+      });
+      assistantId = assistant.id;
+      await databaseService.saveAssistantId(assistantId);
+  }
+  return assistantId;
+}
+
+// create thread
+async function createThread(userId) {
+  let threadId = await databaseService.getThreadId(userId);
+  if(!threadId){
+    const thread = await openai.beta.threads.create();
+    databaseService.saveThreadId(userId, thread.id);
+    threadId = thread.id;
+  }
+  return threadId;
+}
+
+async function waitForRunCompletion(threadId, runId) {
+  const checkInterval = 1000; // 1초마다 상태 체크
+  let runStatus = null;
+
+  while (runStatus !== 'completed') {
+    const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+    runStatus = run.status;
+
+    if (runStatus === 'completed') {
+      console.log('Run completed:', run);
+      console.log(run);
+      return run;
+    } else if (runStatus === 'failed') {
+      console.log('Run failed:', run.last_error);
+      return null;
+    } else {
+      console.log('Run status:', runStatus);
     }
 
-    // const response = await openai.ChatCompletion.create({
-    //     assistant_id: assistantId,
-    //     messages: [{
-    //         role: "user",
-    //         content: message
-    //     }]
-    // });
-    const thread = await openai.beta.threads.create();
-    const threadId = thread.id;
+    // 상태가 complete 또는 failed가 아니면 대기
+    await new Promise(resolve => setTimeout(resolve, checkInterval));
+  }
+}
 
-    const threadMessages = await openai.beta.threads.messages.create(
-        threadId,
-        { role: "user", content: message}
-      );
+// run message
+async function sendMessageAndRunThread(threadId, assistantId, message) {
+  const threadMessage = await openai.beta.threads.messages.create(
+    threadId,
+    { role: "user", content: message }
+  );
 
-    const run = openai.beta.threads.runs.stream(threadId, {
-        assistant_id: assistantId
-      })
-        .on('textCreated', (text) => process.stdout.write('\nassistant > '))
-        .on('textDelta', (textDelta, snapshot) => process.stdout.write(textDelta.value))
-        .on('toolCallCreated', (toolCall) => process.stdout.write(`\nassistant > ${toolCall.type}\n\n`))
-        .on('toolCallDelta', (toolCallDelta, snapshot) => {
-          if (toolCallDelta.type === 'code_interpreter') {
-            if (toolCallDelta.code_interpreter.input) {
-              process.stdout.write(toolCallDelta.code_interpreter.input);
-            }
-            if (toolCallDelta.code_interpreter.outputs) {
-              process.stdout.write("\noutput >\n");
-              toolCallDelta.code_interpreter.outputs.forEach(output => {
-                if (output.type === "logs") {
-                  process.stdout.write(`\n${output.logs}\n`);
-                }
-              });
-            }
-          }
-        });
+  const run = await openai.beta.threads.runs.create(
+    threadId,
+    { assistant_id: assistantId }
+  );
 
-    console.log(run);
+  // Run이 완료될 때까지 기다리기
+  const completedRun = await waitForRunCompletion(threadId, run.id);
 
+  if (completedRun) {
+    console.log(completedRun)
+  }
 
-    return { userId
-        //  , response: threadMessages.data.choices[0].message.content 
-    };
+  const resultMessage = await openai.beta.threads.messages.list(
+    threadId
+  );
+
+  return resultMessage;
+}
+
+async function getChatResponse(userId, message) {
+  const assistantId = await createAssistant(userId);
+  const threadId = await createThread(userId);
+  const Messages = await sendMessageAndRunThread(threadId, assistantId, message);
+  return { userId
+      , response : Messages.body.data[0].content[0].text.value
+  };
 }
 
 module.exports = { getChatResponse };
