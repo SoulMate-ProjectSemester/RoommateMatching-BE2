@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 // create assistant
-async function createAssistant(userId) {
+async function createAssistant() {
   let assistantId = await databaseService.getAssistantId();
 
   if (!assistantId) {
@@ -111,7 +111,7 @@ async function sendMessageAndRunThread(threadId, assistantId, userMessage) {
   }
 
   // Run이 완료될 때까지 기다리기
-  const completedRun = await waitForRunCompletion(threadId, run.id);
+  await waitForRunCompletion(threadId, run.id);
 
   const resultMessage = await openai.beta.threads.messages.list(
     threadId
@@ -121,7 +121,7 @@ async function sendMessageAndRunThread(threadId, assistantId, userMessage) {
 }
 
 async function getChatResponse(userId, message) {
-  const assistantId = await createAssistant(userId);
+  const assistantId = await createAssistant();
   const threadId = await createThread(userId);
   const Messages = await sendMessageAndRunThread(threadId, assistantId, message);
   return { userId
