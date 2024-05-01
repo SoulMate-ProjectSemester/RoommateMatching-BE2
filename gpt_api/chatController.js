@@ -1,4 +1,5 @@
 const chatService = require('./chatService');
+const writeFile = require('./writeFile');
 
 exports.handleChat = async (req, res) => {
   const { userId, message } = req.body;
@@ -7,6 +8,7 @@ exports.handleChat = async (req, res) => {
   }
 
   try {
+    await writeFile.saveToFile(userId);
     const response = await chatService.getChatResponse(userId, message);
     res.json(response);
   } catch (error) {

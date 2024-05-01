@@ -1,7 +1,10 @@
 const OpenAI = require('openai');
-const databaseService = require('./DBConnect');
+const databaseService = require('./assistantRepository');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const fs = require('fs');
+const path = require('path');
 
 // create assistant
 async function createAssistant(userId) {
@@ -11,6 +14,7 @@ async function createAssistant(userId) {
       const assistant = await openai.beta.assistants.create({
           instructions: "너는 룸메이트 매칭 서비스의 ai챗봇이야. 사용자의 질문에 친절히 답해줘",
           name: "Roommate service chatbot",
+          tools: [{ type: "file_search" }],
           model: "gpt-4-turbo",
       });
       assistantId = assistant.id;
@@ -22,11 +26,27 @@ async function createAssistant(userId) {
 // create thread
 async function createThread(userId) {
   let threadId = await databaseService.getThreadId(userId);
-  if(!threadId){
-    const thread = await openai.beta.threads.create();
-    databaseService.saveThreadId(userId, thread.id);
+  if (!threadId) {
+    const filePath = path.join(__dirname, '..', `chatMessage/${userId}.txt`);
+    const chatList = await openai.files.create({
+        file: fs.createReadStream(filePath),
+        purpose: "assistants",
+    });
+    const thread = await openai.beta.threads.create({
+      messages: [
+        {
+          role: "user",
+          content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 파일에 있는 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
+          // Attach the new file to the message.
+          attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
+        },
+      ],
+    });
+
+    await databaseService.saveThreadId(userId, thread.id);
     threadId = thread.id;
   }
+
   return threadId;
 }
 
@@ -55,23 +75,43 @@ async function waitForRunCompletion(threadId, runId) {
 }
 
 // run message
-async function sendMessageAndRunThread(threadId, assistantId, message) {
+async function sendMessageAndRunThread(threadId, assistantId, userMessage) {
   const threadMessage = await openai.beta.threads.messages.create(
     threadId,
-    { role: "user", content: message }
+    { role: "user", content: userMessage }
   );
-
-  const run = await openai.beta.threads.runs.create(
-    threadId,
-    { assistant_id: assistantId }
-  );
+  
+  const run = await openai.beta.threads.runs.createAndPoll(threadId, {
+    assistant_id: assistantId,
+  });
+   
+  const messages = await openai.beta.threads.messages.list(threadId, {
+    run_id: run.id,
+  });
+   
+  const message = messages.data.pop();
+  if (message.content[0].type === "text") {
+    const { text } = message.content[0];
+    const { annotations } = text;
+    const citations = [];
+  
+    let index = 0;
+    for (let annotation of annotations) {
+      text.value = text.value.replace(annotation.text, "[" + index + "]");
+      const { file_citation } = annotation;
+      if (file_citation) {
+        const citedFile = await openai.files.retrieve(file_citation.file_id);
+        citations.push("[" + index + "]" + citedFile.filename);
+      }
+      index++;
+    }
+  
+    console.log(text.value);
+    console.log(citations.join("\n"));
+  }
 
   // Run이 완료될 때까지 기다리기
   const completedRun = await waitForRunCompletion(threadId, run.id);
-
-  if (completedRun) {
-    console.log(completedRun)
-  }
 
   const resultMessage = await openai.beta.threads.messages.list(
     threadId

@@ -19,7 +19,7 @@ async function getAssistantId() {
       'SELECT assistant_id FROM assistant'
     );
     if (rows.length > 0) {
-      return rows[0].assistant_id.toString('hex');  // binary 데이터를 hex string으로 변환
+      return rows[0].assistant_id;
     } else {
       return null;
     }
@@ -57,7 +57,7 @@ async function getThreadId(userId) {
       [userId]
     );
     if (rows.length > 0) {
-      return rows[0].thread_id;  // binary 데이터를 hex string으로 변환
+      return rows[0].thread_id; 
     } else {
       return null;
     }
@@ -112,18 +112,3 @@ async function saveThreadId(userId, threadId) {
 
 
 module.exports = { getAssistantId, saveAssistantId, getThreadId, saveThreadId };
-
-
-/**
- * gpt api 관련 기능
- * 회원만 thread를 생성할 수 있도록 제한 ----------- assistant id 저장하는 부분 에러 
- * assistant, thread 생성을 유저별로 한번씩만 가능하도록 기능 구현
- * 
- * 프런트에서 사용할만한 기능
- * 전체 대화내용 불러와서 리턴하기
- * 
- * 추후 추가될 기능
- * assistant id, thread id, message id, run id가 생성되는데 어떻게 관리할 것인가.
- * thread에 파일 추가할 수 있는데 대화 내용을 파일로 추가할 것인가 아니면 db에서 조회할 것인가.
- * 
- */
