@@ -36,7 +36,7 @@ async function createThread(userId) {
       messages: [
         {
           role: "user",
-          content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 파일에 있는 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
+          content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 키워드는 사용자가 본인의 성향을 알려주기 위해 선택한 단어들이야. 파일에 있는 키워드와 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
           // Attach the new file to the message.
           attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
         },

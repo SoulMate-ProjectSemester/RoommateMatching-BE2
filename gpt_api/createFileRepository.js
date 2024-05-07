@@ -12,7 +12,7 @@ const pool = mysql.createPool({
 });
 
 async function findChatList(userId){
-    const connection = await pool.getConnection(); 
+  const connection = await pool.getConnection(); 
   try {
     const [rows] = await connection.query(
       'SELECT cm. * FROM chat_message cm JOIN chat_room_member crm ON cm.chat_room_id = crm.chat_room_id WHERE crm.member_id = ? AND cm.timestamp >= NOW() - INTERVAL 7 DAY;'
@@ -31,4 +31,25 @@ async function findChatList(userId){
   }
 }
 
-module.exports = { findChatList };
+async function findKeywordList(userId){
+  const connection = await pool.getConnection(); 
+  try {
+    const [rows] = await connection.query(
+      'SELECT * from keyword_keyword_set where keyword_id = ?;'
+      , [userId]
+    );
+    console.log(rows);
+    if (rows.length > 0) {
+      return rows;
+    } else {
+      return null;
+    }
+  } catch (err) {
+    console.error('Database Error:', err);
+    throw err;  // 에러 발생 시 상위 스택으로 전파
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = { findChatList, findKeywordList };
