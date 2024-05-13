@@ -8,7 +8,7 @@ exports.handleChat = async (req, res) => {
   }
 
   try {
-    await writeFile.saveToFile(userId);
+    await writeFile.saveToUserMessageFile(userId);
     const response = await chatService.getChatResponse(userId, message);
     res.json(response);
   } catch (error) {

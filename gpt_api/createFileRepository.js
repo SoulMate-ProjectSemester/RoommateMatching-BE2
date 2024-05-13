@@ -18,11 +18,7 @@ async function findChatList(userId){
       'SELECT cm. * FROM chat_message cm JOIN chat_room_member crm ON cm.chat_room_id = crm.chat_room_id WHERE crm.member_id = ? AND cm.timestamp >= NOW() - INTERVAL 7 DAY;'
       , [userId]
     );
-    if (rows.length > 0) {
-      return rows;
-    } else {
-      return null;
-    }
+    return rows.length > 0 ? rows : null;
   } catch (err) {
     console.error('Database Error:', err);
     throw err;  // 에러 발생 시 상위 스택으로 전파
@@ -39,11 +35,7 @@ async function findKeywordList(userId){
       , [userId]
     );
     console.log(rows);
-    if (rows.length > 0) {
-      return rows;
-    } else {
-      return null;
-    }
+    return rows.length > 0 ? rows : null;
   } catch (err) {
     console.error('Database Error:', err);
     throw err;  // 에러 발생 시 상위 스택으로 전파
@@ -52,4 +44,23 @@ async function findKeywordList(userId){
   }
 }
 
-module.exports = { findChatList, findKeywordList };
+async function findRoomMessages(roomId) {
+  const connection = await pool.getConnection(); 
+  try {
+    roomId = roomId.replace(/-/g, ''); // UUID에서 '-' 제거
+    const [rows] = await connection.query(
+      'SELECT * from chat_message where chat_room_id = UNHEX(?);'
+      , [roomId]
+    );
+    console.log(rows);
+    return rows.length > 0 ? rows : null;
+  } catch (err) {
+    console.error('Database Error:', err);
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+
+module.exports = { findChatList, findKeywordList, findRoomMessages };

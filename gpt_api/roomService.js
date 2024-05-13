@@ -6,13 +6,13 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const fs = require('fs');
 const path = require('path');
 
-const folderPath = path.join(__dirname, '..', 'userInfo');
+const folderPath = path.join(__dirname, '..', 'roomMessages');
 
 // create thread
-async function createUserThread(userId) {
-  let threadId = await databaseService.getUserThreadId(userId);
+async function createRoomThread(roomId) {
+  let threadId = await databaseService.getRoomThreadId(roomId);
   if (!threadId) {
-    const filePath = path.join(folderPath, `${userId}.txt`);
+    const filePath = path.join(folderPath, `${roomId}.txt`);
     const chatList = await openai.files.create({
         file: fs.createReadStream(filePath),
         purpose: "assistants",
@@ -21,14 +21,14 @@ async function createUserThread(userId) {
       messages: [
         {
           role: "user",
-          content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 키워드는 사용자가 본인의 성향을 알려주기 위해 선택한 단어들이야. 파일에 있는 키워드와 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
+          content: `너는 사용자 id가 ${roomId}인 방의 챗봇이야. 파일에 있는 대화내용을 통해 사용자들의 성격을 파악한 후 질문에 솔직하게 답변해줘.`,
           // Attach the new file to the message.
           attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
         },
       ],
     });
 
-    await databaseService.saveUserThreadId(userId, thread.id);
+    await databaseService.saveRoomThreadId(roomId, thread.id);
     threadId = thread.id;
   }
 
@@ -60,10 +60,10 @@ async function waitForRunCompletion(threadId, runId) {
 }
 
 // run message
-async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
+async function sendRoomMessageAndRunThread(threadId, assistantId, roomMessage) {
   const threadMessage = await openai.beta.threads.messages.create(
     threadId,
-    { role: "user", content: userMessage }
+    { role: "user", content: roomMessage }
   );
   
   const run = await openai.beta.threads.runs.createAndPoll(threadId, {
@@ -105,14 +105,13 @@ async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
   return resultMessage;
 }
 
-async function getChatResponse(userId, message) {
+async function getRoomResponse(roomId, message) {
   const assistantId = await databaseService.getAssistantId();
-  const threadId = await createUserThread(userId);  
-  const Messages = await sendUserMessageAndRunThread(threadId, assistantId, message);
-  return { userId
+  const threadId = await createRoomThread(roomId);
+  const Messages = await sendRoomMessageAndRunThread(threadId, assistantId, message);
+  return { roomId
       , response : Messages.body.data[0].content[0].text.value
   };
 }
 
-module.exports = { getChatResponse };
-
+module.exports = { getRoomResponse };
