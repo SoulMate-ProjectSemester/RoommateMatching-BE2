@@ -13,12 +13,6 @@ RUN npm install
 # Copy the local code to the container image.
 COPY . .
 
-# Set the environment variables
-ENV NODE_ENV production
-
-# If you have a build script, uncomment the next line
-# RUN npm run build
-
 # Expose the port the app runs on
 EXPOSE 8181
 

@@ -115,4 +115,3 @@ async function getChatResponse(userId, message) {
 }
 
 module.exports = { getChatResponse };
-
