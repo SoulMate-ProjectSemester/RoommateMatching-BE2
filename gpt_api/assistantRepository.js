@@ -6,6 +6,7 @@ const password = process.env.DBPASSWORD;
 const database = process.env.DBDATABASE;
 
 const pool = mysql.createPool({ 
+  host: host,
   user: user,
   password: password,
   database: database

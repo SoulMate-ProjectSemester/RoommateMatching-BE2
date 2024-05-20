@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8181
 
 # Run the web service on container startup.
-CMD ["npm", "app.js"]
+CMD ["node", "app.js"]
