@@ -2,11 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const chatController = require('./gpt_api/chatController');
 const roomController = require('./gpt_api/roomController');
-const initialize = require('./initialize');
 const app = express();
 const port = process.env.PORT || 8181;
-
-initialize();  // 애플리케이션 시작 시 함수 실행
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

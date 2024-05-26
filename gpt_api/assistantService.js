@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const databaseService = require('./gpt_api/assistantRepository');
+const databaseService = require('./assistantRepository');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

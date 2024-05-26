@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
-    "build": "echo 'Nobuild script defined'"
+    "build": "echo 'No build script defined'"
   },
   "keywords": [],
   "author": "",
