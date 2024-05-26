@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const databaseService = require('./assistantRepository');
+const assistantService = require('./assistantService');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -106,7 +107,7 @@ async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
 }
 
 async function getChatResponse(userId, message) {
-  const assistantId = await databaseService.getAssistantId();
+  const assistantId = await assistantService.createAssistant();
   const threadId = await createUserThread(userId);  
   const Messages = await sendUserMessageAndRunThread(threadId, assistantId, message);
   return { userId
