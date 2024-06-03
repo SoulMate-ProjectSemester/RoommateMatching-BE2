@@ -4,12 +4,22 @@ const host = process.env.DBHOST;
 const user = process.env.DBUSER; 
 const password = process.env.DBPASSWORD;
 const database = process.env.DBDATABASE;
+const port = process.env.DBPORT;
 
 const pool = mysql.createPool({ 
   host: host,
   user: user,
   password: password,
-  database: database
+  database: database,
+  port: port,
+});
+
+connection.connect((err) => {
+  if (err) {
+    console.error('Error connecting: ' + err.stack);
+    return;
+  }
+  console.log('Connected as id ' + connection.threadId);
 });
 
 // assistant_id 불러오기
