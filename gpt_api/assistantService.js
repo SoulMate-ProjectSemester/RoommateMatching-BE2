@@ -16,6 +16,7 @@ async function createAssistant() {
         assistantId = assistant.id;
         await databaseService.saveAssistantId(assistantId);
     }
+    return assistantId
 }
   
 module.exports = {createAssistant};
