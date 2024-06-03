@@ -14,14 +14,6 @@ const pool = mysql.createPool({
   port: port,
 });
 
-connection.connect((err) => {
-  if (err) {
-    console.error('Error connecting: ' + err.stack);
-    return;
-  }
-  console.log('Connected as id ' + connection.threadId);
-});
-
 // assistant_id 불러오기
 async function getAssistantId() {
   const connection = await pool.getConnection(); 
