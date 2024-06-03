@@ -5,9 +5,13 @@ const roomController = require('./gpt_api/roomController');
 const initialize = require('./initialize');
 const app = express();
 const port = process.env.PORT || 8181;
+const cors = require('cors');
+
+
 
 initialize();  // 애플리케이션 시작 시 함수 실행
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
