@@ -1,9 +1,9 @@
 const OpenAI = require('openai');
-const databaseService = require('./gpt_api/assistantRepository');
+const databaseService = require('./assistantRepository');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-async function initialize() {
+async function createAssistant() {
     // create assistant
     let assistantId = await databaseService.getAssistantId();
     if (!assistantId) {
@@ -16,6 +16,7 @@ async function initialize() {
         assistantId = assistant.id;
         await databaseService.saveAssistantId(assistantId);
     }
+    return assistantId
 }
   
-module.exports = initialize;
+module.exports = {createAssistant};

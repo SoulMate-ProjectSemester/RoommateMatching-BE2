@@ -1,10 +1,13 @@
 const OpenAI = require('openai');
 const databaseService = require('./assistantRepository');
+const assistantService = require('./assistantService');
+const saveMessageRepository = require('./saveMessageRepository')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const fs = require('fs');
 const path = require('path');
+const { saveToRoomMessageFile } = require('./writeFile');
 
 const folderPath = path.join(__dirname, '..', 'roomMessages');
 
@@ -106,12 +109,18 @@ async function sendRoomMessageAndRunThread(threadId, assistantId, roomMessage) {
 }
 
 async function getRoomResponse(roomId, message) {
-  const assistantId = await databaseService.getAssistantId();
+  const assistantId = await assistantService.createAssistant();
   const threadId = await createRoomThread(roomId);
   const Messages = await sendRoomMessageAndRunThread(threadId, assistantId, message);
-  return { roomId
-      , response : Messages.body.data[0].content[0].text.value
-  };
+  const response = await saveMessageRepository.saveRoomMessage(roomId, Messages.body.data[0].content[0].text.value);
+  if (response != null) {
+    return {
+      roomId,
+      response: Messages.body.data[0].content[0].text.value
+    };
+  } else {
+    return "오류가 발생했습니다.";
+  }
 }
 
 module.exports = { getRoomResponse };

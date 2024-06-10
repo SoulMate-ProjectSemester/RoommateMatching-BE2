@@ -1,5 +1,7 @@
 const OpenAI = require('openai');
 const databaseService = require('./assistantRepository');
+const assistantService = require('./assistantService');
+const saveMessageRepository = require('./saveMessageRepository')
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -106,13 +108,17 @@ async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
 }
 
 async function getChatResponse(userId, message) {
-  const assistantId = await databaseService.getAssistantId();
+  const assistantId = await assistantService.createAssistant();
   const threadId = await createUserThread(userId);  
   const Messages = await sendUserMessageAndRunThread(threadId, assistantId, message);
-  return { userId
+  const response = await saveMessageRepository.saveUserMessage(userId, Messages.body.data[0].content[0].text.value)
+  if(response != null){
+    return { userId
       , response : Messages.body.data[0].content[0].text.value
-  };
+    };
+  } else {
+    return "오류가 발생했습니다."
+  }
 }
 
 module.exports = { getChatResponse };
-
