@@ -12,9 +12,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.post('/chat/new', chatController.saveUserChat);
-app.get('/chat', chatController.findUserMessage);
+app.post('/chat', chatController.findUserMessage);
 app.post('/room/new', roomController.saveRoomChat);
-app.get('/room', roomController.findRoomMessage);
+app.post('/room', roomController.findRoomMessage);
 
 app.listen(port, () => {
     console.log(`Server running on http://soulmate.pe.kr:${port}`);
