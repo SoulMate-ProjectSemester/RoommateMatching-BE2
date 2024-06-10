@@ -8,8 +8,10 @@ const port = process.env.PORT || 8181;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.post('/chat', chatController.handleChat);
-app.post('/room', roomController.handleRoom);
+app.post('/chat/new', chatController.saveUserChat);
+app.post('/chat', chatController.findUserMessage);
+app.post('/room/new', roomController.saveRoomChat);
+app.post('/room', roomController.findRoomMessage);
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

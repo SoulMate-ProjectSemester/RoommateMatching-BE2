@@ -1,7 +1,8 @@
 const roomService = require('./roomService');
 const writeFile = require('./writeFile');
+const messageRepository = require('./saveMessageRepository')
 
-exports.handleRoom = async (req, res) => {
+exports.saveRoomChat = async (req, res) => {
     const { roomId } = req.body;
     if (!roomId) {
       return res.status(400).send('roomId are required');
@@ -17,3 +18,18 @@ exports.handleRoom = async (req, res) => {
       res.status(500).send('Failed to process roomId message');
     }
   };
+
+  exports.findRoomMessage = async(req, res) => {
+    const { roomId } = req.body;
+    if (!roomId) {
+      return res.status(400).send('roomId are required');
+    }
+  
+    try {
+      const response = await messageRepository.findRoomMessage(roomId)
+      res.json(response);
+    } catch (error) {
+      console.error('Failed to process roomId message:', error);
+      res.status(500).send('Failed to process roomId message');
+    }
+  }
