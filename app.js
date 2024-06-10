@@ -5,11 +5,6 @@ const roomController = require('./gpt_api/roomController');
 const app = express();
 const port = process.env.PORT || 8181;
 const cors = require('cors');
-<<<<<<< HEAD
-
-
-=======
->>>>>>> release
 
 
 app.use(cors());
