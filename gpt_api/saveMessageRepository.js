@@ -98,7 +98,6 @@ async function findUserMessage(userId) {
       [userId]
     );
     if (rows.length > 0) {
-      rows[0].chatroom_id = chatroomIdUUID
       return rows[0];
     } else {
       return null;
