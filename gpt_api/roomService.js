@@ -15,26 +15,26 @@ const folderPath = path.join(__dirname, '..', 'roomMessages');
 async function createRoomThread(roomId) {
   console.log(folderPath)
   let threadId = await databaseService.getRoomThreadId(roomId);
-  if (!threadId) {
-    const filePath = path.join(folderPath, `${roomId}.txt`);
-    const chatList = await openai.files.create({
-        file: fs.createReadStream(filePath),
-        purpose: "assistants",
-    });
-    const thread = await openai.beta.threads.create({
-      messages: [
-        {
-          role: "user",
-          content: `너는 사용자 id가 ${roomId}인 방의 챗봇이야. 파일에 있는 대화내용을 통해 사용자들의 성격을 파악한 후 질문에 솔직하게 답변해줘.`,
-          // Attach the new file to the message.
-          attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
-        },
-      ],
-    });
 
-    await databaseService.saveRoomThreadId(roomId, thread.id);
-    threadId = thread.id;
-  }
+  const filePath = path.join(folderPath, `${roomId}.txt`);
+  console.log(filePath)
+  const chatList = await openai.files.create({
+      file: fs.createReadStream(filePath),
+      purpose: "assistants",
+  });
+  const thread = await openai.beta.threads.create({
+    messages: [
+      {
+        role: "user",
+        content: `너는 사용자 id가 ${roomId}인 방의 챗봇이야. 파일에 있는 대화내용을 통해 사용자들의 성격을 파악한 후 질문에 솔직하게 답변해줘.`,
+        // Attach the new file to the message.
+        attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
+      },
+    ],
+  });
+
+  await databaseService.saveRoomThreadId(roomId, thread.id);
+  threadId = thread.id;
 
   return threadId;
 }

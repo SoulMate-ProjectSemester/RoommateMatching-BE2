@@ -12,28 +12,28 @@ const folderPath = path.join(__dirname, '..', 'userInfo');
 
 // create thread
 async function createUserThread(userId) {
+  console.log(folderPath)
   let threadId = await databaseService.getUserThreadId(userId);
-  if (!threadId) {
-    console.log(folderPath)
-    const filePath = path.join(folderPath, `${userId}.txt`);
-    const chatList = await openai.files.create({
-        file: fs.createReadStream(filePath),
-        purpose: "assistants",
-    });
-    const thread = await openai.beta.threads.create({
-      messages: [
-        {
-          role: "user",
-          content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 키워드는 사용자가 본인의 성향을 알려주기 위해 선택한 단어들이야. 파일에 있는 키워드와 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
-          // Attach the new file to the message.
-          attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
-        },
-      ],
-    });
 
-    await databaseService.saveUserThreadId(userId, thread.id);
-    threadId = thread.id;
-  }
+  const filePath = path.join(folderPath, `${userId}.txt`);
+  console.log(filePath)
+  const chatList = await openai.files.create({
+      file: fs.createReadStream(filePath),
+      purpose: "assistants",
+  });
+  const thread = await openai.beta.threads.create({
+    messages: [
+      {
+        role: "user",
+        content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 키워드는 사용자가 본인의 성향을 알려주기 위해 선택한 단어들이야. 파일에 있는 키워드와 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
+        // Attach the new file to the message.
+        attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
+      },
+    ],
+  });
+
+  await databaseService.saveUserThreadId(userId, thread.id);
+  threadId = thread.id;
 
   return threadId;
 }
