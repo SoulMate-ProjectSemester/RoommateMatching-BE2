@@ -14,6 +14,7 @@ const folderPath = path.join(__dirname, '..', 'userInfo');
 async function createUserThread(userId) {
   let threadId = await databaseService.getUserThreadId(userId);
   if (!threadId) {
+    console.log(folderPath)
     const filePath = path.join(folderPath, `${userId}.txt`);
     const chatList = await openai.files.create({
         file: fs.createReadStream(filePath),

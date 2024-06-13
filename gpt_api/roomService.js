@@ -13,6 +13,7 @@ const folderPath = path.join(__dirname, '..', 'roomMessages');
 
 // create thread
 async function createRoomThread(roomId) {
+  console.log(folderPath)
   let threadId = await databaseService.getRoomThreadId(roomId);
   if (!threadId) {
     const filePath = path.join(folderPath, `${roomId}.txt`);
