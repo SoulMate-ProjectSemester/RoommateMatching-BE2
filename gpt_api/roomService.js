@@ -114,6 +114,7 @@ async function getRoomResponse(roomId, message) {
   const threadId = await createRoomThread(roomId);
   const Messages = await sendRoomMessageAndRunThread(threadId, assistantId, message);
   const response = await saveMessageRepository.saveRoomMessage(roomId, Messages.body.data[0].content[0].text.value);
+  console.log(response)
   if (response != null) {
     return {
       roomId,

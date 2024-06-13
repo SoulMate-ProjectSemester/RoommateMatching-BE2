@@ -113,6 +113,7 @@ async function getChatResponse(userId, message) {
   const threadId = await createUserThread(userId);  
   const Messages = await sendUserMessageAndRunThread(threadId, assistantId, message);
   const response = await saveMessageRepository.saveUserMessage(userId, Messages.body.data[0].content[0].text.value)
+  console.log(response)
   if(response != null){
     return { userId
       , response : Messages.body.data[0].content[0].text.value
