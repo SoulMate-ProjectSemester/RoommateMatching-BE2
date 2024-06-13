@@ -19,10 +19,10 @@ async function saveToUserMessageFile(userId) {
         const keyword = await databaseService.findKeywordList(userId);
         const chatListMessages = await databaseService.findChatList(userId);
         if (!chatListMessages) throw new Error("No chatListMessages found.");
-        if(!keyword) throw new Error("No keywords found.");
+        if (!keyword) throw new Error("No keywords found.");
 
         // Convert keyword data to string format
-        const keywordString = keyword.map(kw => `Keyword ID: ${kw.keyword_id}, Keyword Set: '${kw.keyword_set}'`).join('\n');
+        const keywordString = keyword.map(kw => `Keyword ID: ${kw.keyword_id}, Keyword Set: '${kw.value}'`).join('\n');
 
         // Convert chat messages to string format
         const chatString = chatListMessages.map(msg => {
