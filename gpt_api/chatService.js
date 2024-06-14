@@ -78,6 +78,7 @@ async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
   });
    
   const message = messages.data.pop();
+  console.log(message)
   if (message.content[0].type === "text") {
     const { text } = message.content[0];
     const { annotations } = text;

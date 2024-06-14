@@ -79,6 +79,7 @@ async function sendRoomMessageAndRunThread(threadId, assistantId, roomMessage) {
   });
    
   const message = messages.data.pop();
+  console.log(message)
   if (message.content[0].type === "text") {
     const { text } = message.content[0];
     const { annotations } = text;
