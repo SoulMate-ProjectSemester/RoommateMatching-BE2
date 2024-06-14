@@ -3,11 +3,6 @@ const databaseService = require('./assistantRepository');
 const assistantService = require('./assistantService');
 const saveMessageRepository = require('./saveMessageRepository')
 
-const OpenAI = require('openai');
-const databaseService = require('./assistantRepository');
-const assistantService = require('./assistantService');
-const saveMessageRepository = require('./saveMessageRepository');
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const fs = require('fs');
