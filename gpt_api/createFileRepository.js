@@ -34,7 +34,7 @@ async function findKeywordList(userId){
   const connection = await pool.getConnection(); 
   try {
     const [rows] = await connection.query(
-      'SELECT * from keyword_detail where keyword_id = ?;'
+      'SELECT * from keywords where keyword_id = ?;'
       , [userId]
     );
     console.log(rows);

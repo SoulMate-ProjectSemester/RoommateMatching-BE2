@@ -1,7 +1,7 @@
 const OpenAI = require('openai');
 const databaseService = require('./assistantRepository');
 const assistantService = require('./assistantService');
-const saveMessageRepository = require('./saveMessageRepository')
+const saveMessageRepository = require('./saveMessageRepository');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -12,11 +12,11 @@ const folderPath = path.join(__dirname, '..', 'userInfo');
 
 // create thread
 async function createUserThread(userId) {
-  console.log(folderPath)
+  console.log(folderPath);
   let threadId = await databaseService.getUserThreadId(userId);
 
   const filePath = path.join(folderPath, `${userId}.txt`);
-  console.log(filePath)
+  console.log(filePath);
   const chatList = await openai.files.create({
       file: fs.createReadStream(filePath),
       purpose: "assistants",
@@ -26,7 +26,6 @@ async function createUserThread(userId) {
       {
         role: "user",
         content: `너는 사용자 id가 ${userId}인 사람의 전용 챗봇이야. 키워드는 사용자가 본인의 성향을 알려주기 위해 선택한 단어들이야. 파일에 있는 키워드와 대화내용을 통해 사용자의 성격을 파악한 후 사용자의 질문에 솔직하게 답변해줘.`,
-        // Attach the new file to the message.
         attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
       },
     ],
@@ -48,7 +47,6 @@ async function waitForRunCompletion(threadId, runId) {
 
     if (runStatus === 'completed') {
       console.log('Run completed:', run);
-      console.log(run);
       return run;
     } else if (runStatus === 'failed') {
       console.log('Run failed:', run.last_error);
@@ -72,17 +70,23 @@ async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
   const run = await openai.beta.threads.runs.createAndPoll(threadId, {
     assistant_id: assistantId,
   });
-   
+
+  // Run이 완료될 때까지 기다리기
+  await waitForRunCompletion(threadId, run.id);
+
   const messages = await openai.beta.threads.messages.list(threadId, {
     run_id: run.id,
   });
-   
+
+  // 마지막 메시지 추출
   const message = messages.data.pop();
+  console.log(message);
+
   if (message.content[0].type === "text") {
     const { text } = message.content[0];
     const { annotations } = text;
     const citations = [];
-  
+
     let index = 0;
     for (let annotation of annotations) {
       text.value = text.value.replace(annotation.text, "[" + index + "]");
@@ -93,33 +97,32 @@ async function sendUserMessageAndRunThread(threadId, assistantId, userMessage) {
       }
       index++;
     }
-  
+
     console.log(text.value);
     console.log(citations.join("\n"));
   }
 
-  // Run이 완료될 때까지 기다리기
-  await waitForRunCompletion(threadId, run.id);
-
-  const resultMessage = await openai.beta.threads.messages.list(
-    threadId
-  );
-
-  return resultMessage;
+  return message;
 }
 
 async function getChatResponse(userId, message) {
   const assistantId = await assistantService.createAssistant();
   const threadId = await createUserThread(userId);  
-  const Messages = await sendUserMessageAndRunThread(threadId, assistantId, message);
-  const response = await saveMessageRepository.saveUserMessage(userId, Messages.body.data[0].content[0].text.value)
-  console.log(response)
-  if(response != null){
-    return { userId
-      , response : Messages.body.data[0].content[0].text.value
-    };
+  const userMessage = await sendUserMessageAndRunThread(threadId, assistantId, message);
+
+  if (userMessage) {
+    const response = await saveMessageRepository.saveUserMessage(userId, userMessage.content[0].text.value);
+    console.log(response);
+    if (response != null) {
+      return {
+        userId,
+        response: userMessage.content[0].text.value
+      };
+    } else {
+      return "오류가 발생했습니다.";
+    }
   } else {
-    return "오류가 발생했습니다."
+    return "메시지를 가져오는데 실패했습니다.";
   }
 }
 

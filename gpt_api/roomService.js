@@ -13,11 +13,11 @@ const folderPath = path.join(__dirname, '..', 'roomMessages');
 
 // create thread
 async function createRoomThread(roomId) {
-  console.log(folderPath)
+  console.log(folderPath);
   let threadId = await databaseService.getRoomThreadId(roomId);
 
   const filePath = path.join(folderPath, `${roomId}.txt`);
-  console.log(filePath)
+  console.log(filePath);
   const chatList = await openai.files.create({
       file: fs.createReadStream(filePath),
       purpose: "assistants",
@@ -27,7 +27,6 @@ async function createRoomThread(roomId) {
       {
         role: "user",
         content: `너는 사용자 id가 ${roomId}인 방의 챗봇이야. 파일에 있는 대화내용을 통해 사용자들의 성격을 파악한 후 질문에 솔직하게 답변해줘.`,
-        // Attach the new file to the message.
         attachments: [{ file_id: chatList.id, tools: [{ type: "file_search" }] }],
       },
     ],
@@ -49,7 +48,6 @@ async function waitForRunCompletion(threadId, runId) {
 
     if (runStatus === 'completed') {
       console.log('Run completed:', run);
-      console.log(run);
       return run;
     } else if (runStatus === 'failed') {
       console.log('Run failed:', run.last_error);
@@ -73,17 +71,23 @@ async function sendRoomMessageAndRunThread(threadId, assistantId, roomMessage) {
   const run = await openai.beta.threads.runs.createAndPoll(threadId, {
     assistant_id: assistantId,
   });
-   
+
+  // Run이 완료될 때까지 기다리기
+  await waitForRunCompletion(threadId, run.id);
+
   const messages = await openai.beta.threads.messages.list(threadId, {
     run_id: run.id,
   });
-   
+
+  // 마지막 메시지 추출
   const message = messages.data.pop();
+  console.log(message);
+
   if (message.content[0].type === "text") {
     const { text } = message.content[0];
     const { annotations } = text;
     const citations = [];
-  
+
     let index = 0;
     for (let annotation of annotations) {
       text.value = text.value.replace(annotation.text, "[" + index + "]");
@@ -94,34 +98,32 @@ async function sendRoomMessageAndRunThread(threadId, assistantId, roomMessage) {
       }
       index++;
     }
-  
+
     console.log(text.value);
     console.log(citations.join("\n"));
   }
 
-  // Run이 완료될 때까지 기다리기
-  await waitForRunCompletion(threadId, run.id);
-
-  const resultMessage = await openai.beta.threads.messages.list(
-    threadId
-  );
-
-  return resultMessage;
+  return message;
 }
 
 async function getRoomResponse(roomId, message) {
   const assistantId = await assistantService.createAssistant();
   const threadId = await createRoomThread(roomId);
-  const Messages = await sendRoomMessageAndRunThread(threadId, assistantId, message);
-  const response = await saveMessageRepository.saveRoomMessage(roomId, Messages.body.data[0].content[0].text.value);
-  console.log(response)
-  if (response != null) {
-    return {
-      roomId,
-      response: Messages.body.data[0].content[0].text.value
-    };
+  const roomMessage = await sendRoomMessageAndRunThread(threadId, assistantId, message);
+  
+  if (roomMessage) {
+    const response = await saveMessageRepository.saveRoomMessage(roomId, roomMessage.content[0].text.value);
+    console.log(response);
+    if (response != null) {
+      return {
+        roomId,
+        response: roomMessage.content[0].text.value
+      };
+    } else {
+      return "오류가 발생했습니다.";
+    }
   } else {
-    return "오류가 발생했습니다.";
+    return "메시지를 가져오는데 실패했습니다.";
   }
 }
 
